@@ -10,12 +10,11 @@ namespace OOP_cv9
     {
         public string Memory;
 
-        private double firstNumber;
-        private double secondNumber;
-        private string operand;
+        private string firstNumber;
+        private string secondNumber;
         private double result;
-        private bool decimalEntry;
-        private int decimalCount;
+        private string operand;
+        string error;
         private enum State
         {
             FirstNumber,
@@ -26,14 +25,13 @@ namespace OOP_cv9
         private State _state;
         public Calculator()
         {
-            Display = "";
             Memory = "";
-            firstNumber = 0;
-            secondNumber = 0;
+            firstNumber = "";
+            secondNumber = "";
             operand = "";
+            error = "";
+            result = 0;
             _state = State.FirstNumber;
-            decimalEntry = false;
-            decimalCount = 0;
         }
         public string Display
         {
@@ -42,20 +40,17 @@ namespace OOP_cv9
                 switch (_state)
                 {
                     case State.FirstNumber:
-                        return firstNumber.ToString();
+                        return firstNumber;
                     case State.Operation:
-                        return firstNumber.ToString() + operand;
+                        return firstNumber + operand;
                     case State.SecondNumber:
-                        return firstNumber.ToString() + operand + secondNumber.ToString();
+                        return firstNumber + operand + secondNumber;
                     case State.Result:
+                        if (error.Length > 0) return error;
                         return result.ToString();
                     default:
                         return "";
                 }
-            }
-            private set
-            {
-                Display = value;
             }
         }
         public void Button(string buttonContent)
@@ -72,7 +67,7 @@ namespace OOP_cv9
                 case "7":
                 case "8":
                 case "9":
-                    processNumberPress(Int16.Parse(buttonContent));
+                    processNumberPress(buttonContent);
                     break;
                 case "MC":
                 case "MR":
@@ -99,23 +94,35 @@ namespace OOP_cv9
                     break;
             }
         }
-        private void addToNumber(ref double number, int numberToAdd)
+        private void negateString(ref string input)
         {
-            number = number * 10 + (double)numberToAdd;
+            if (input.Length == 0 || input == "0") return;
+            if (input[0] == '-') input = input.Substring(1);
+            else input = "-" + input;
         }
-        private void processNumberPress(int number)
+        private string negateString(string input)
+        {
+            if (input.Length == 0 || input == "0") return "";
+            if (input[0] == '-') return input.Substring(1);
+            else return "-" + input;
+        }
+        private void processNumberPress(string number)
         {
             switch (_state)
             {
                 case State.FirstNumber:
-                    addToNumber(ref firstNumber, number);
+                    firstNumber += number;
                     break;
                 case State.SecondNumber:
-                    addToNumber(ref secondNumber, number);
+                    secondNumber += number;
                     break;
                 case State.Operation:
-                    addToNumber(ref secondNumber, number);
+                    secondNumber += number;
                     _state = State.SecondNumber;
+                    break;
+                case State.Result:
+                    firstNumber += number;
+                    _state = State.FirstNumber;
                     break;
             }
         }
@@ -123,42 +130,126 @@ namespace OOP_cv9
         {
 
         }
-        private void processClearOperation(string operationButton)
+        private void processClearOperation(string clearButton)
         {
-
+            switch (clearButton)
+            {
+                case "C":
+                    _state = State.FirstNumber;
+                    firstNumber = "";
+                    break;
+                case "CE":
+                    switch (_state)
+                    {
+                        case State.FirstNumber:
+                            firstNumber = "";
+                            break;
+                        case State.SecondNumber:
+                            secondNumber = "";
+                            break;
+                        case State.Result:
+                            firstNumber = "";
+                            _state = State.FirstNumber;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+            }
         }
         private void processOperand(string operandButton)
         {
             switch (operandButton)
             {
                 case "+/-":
-                    if(_state == State.Operation)
+                    switch (_state)
                     {
-                        secondNumber = -firstNumber;
-                        calculateResult();
+                        case State.FirstNumber:
+                            negateString(ref firstNumber);
+                            break;
+                        case State.Operation:
+                            secondNumber = negateString(firstNumber);
+                            _state = State.SecondNumber;
+                            break;
+                        case State.SecondNumber:
+                            negateString(ref secondNumber);
+                            break;
+                        case State.Result:
+                            firstNumber = (-result).ToString();
+                            _state = State.FirstNumber;
+                            break;
                     }
                     break;
                 case "+":
                 case "-":
                 case "*":
                 case "/":
-                    if (_state == State.SecondNumber)
+                    switch (_state)
                     {
-                        calculateResult();
-                        firstNumber = result;
+                        case State.FirstNumber:
+                            if (firstNumber == "") firstNumber = "0";
+                            break;
+                        case State.SecondNumber:
+                            calculateResult();
+                            firstNumber = result.ToString();
+                            break;
+                        case State.Result:
+                            firstNumber = result.ToString();
+                            break;
+                        default:
+                            break;
                     }
                     operand = operandButton;
                     _state = State.Operation;
                     break;
                 case ",":
-                    decimalEntry = true;
-                    decimalCount = 0;
+                    switch (_state)
+                    {
+                        case State.FirstNumber:
+                            firstNumber += ",";
+                            break;
+                        case State.SecondNumber:
+                            secondNumber += ",";
+                            break;
+                        case State.Operation:
+                            secondNumber = "0,";
+                            break;
+                        case State.Result:
+                            firstNumber = "0,";
+                            _state = State.FirstNumber;
+                            break;
+                    }
                     break;
             }
-            
+
         }
         private void calculateResult()
         {
+
+            if (_state == State.Result) return;
+            if (firstNumber == "") firstNumber = "0";
+            if (secondNumber == "") secondNumber = "0";
+            error = "";
+            switch (operand)
+            {
+                case "+":
+                    result = Double.Parse(firstNumber) + Double.Parse(secondNumber);
+                    break;
+                case "-":
+                    result = Double.Parse(firstNumber) - Double.Parse(secondNumber);
+                    break;
+                case "*":
+                    result = Double.Parse(firstNumber) * Double.Parse(secondNumber);
+                    break;
+                case "/":
+                    if (secondNumber == "0") error = "NaN";
+                    else result = Double.Parse(firstNumber) / Double.Parse(secondNumber);
+                    break;
+                default:
+                    break;
+            }
+            firstNumber = "";
+            secondNumber = "";
             _state = State.Result;
         }
     }
