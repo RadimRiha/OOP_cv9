@@ -13,6 +13,7 @@ namespace OOP_cv9
         private string firstNumber;
         private string secondNumber;
         private double result;
+        private double numInMemory;
         private string operand;
         string error;
         private enum State
@@ -31,6 +32,7 @@ namespace OOP_cv9
             operand = "";
             error = "";
             result = 0;
+            numInMemory = 0;
             _state = State.FirstNumber;
         }
         public string Display
@@ -90,21 +92,9 @@ namespace OOP_cv9
                     processOperand(buttonContent);
                     break;
                 case "=":
-                    calculateResult();
+                    if (_state == State.SecondNumber) calculateResult();
                     break;
             }
-        }
-        private void negateString(ref string input)
-        {
-            if (input.Length == 0 || input == "0") return;
-            if (input[0] == '-') input = input.Substring(1);
-            else input = "-" + input;
-        }
-        private string negateString(string input)
-        {
-            if (input.Length == 0 || input == "0") return "";
-            if (input[0] == '-') return input.Substring(1);
-            else return "-" + input;
         }
         private void processNumberPress(string number)
         {
@@ -121,22 +111,115 @@ namespace OOP_cv9
                     _state = State.SecondNumber;
                     break;
                 case State.Result:
+                    clearDisplay();
                     firstNumber += number;
-                    _state = State.FirstNumber;
                     break;
             }
         }
         private void processMemoryOperation(string operationButton)
         {
-
+            switch (operationButton)
+            {
+                case "MC":
+                    numInMemory = 0;
+                    Memory = "";
+                    break;
+                case "MR":
+                    if (Memory == "") break;
+                    switch (_state)
+                    {
+                        case State.FirstNumber:
+                            firstNumber = numInMemory.ToString();
+                            break;
+                        case State.Operation:
+                            secondNumber = numInMemory.ToString();
+                            _state = State.SecondNumber;
+                            break;
+                        case State.SecondNumber:
+                            secondNumber = numInMemory.ToString();
+                            break;
+                        case State.Result:
+                            clearDisplay();
+                            firstNumber = numInMemory.ToString();
+                            break;
+                    }
+                    break;
+                case "MS":
+                    switch (_state)
+                    {
+                        case State.Operation:
+                        case State.FirstNumber:
+                            if (firstNumber != "") numInMemory = Double.Parse(firstNumber);
+                            break;
+                        case State.SecondNumber:
+                            if (secondNumber != "") numInMemory = Double.Parse(secondNumber);
+                            break;
+                        case State.Result:
+                            numInMemory = result;
+                            break;
+                    }
+                    Memory = "M";
+                    break;
+                case "M+":
+                    if (Memory == "") break;
+                    switch (_state)
+                    {
+                        case State.FirstNumber:
+                            if (firstNumber != "") numInMemory += Double.Parse(firstNumber);
+                            break;
+                        case State.Operation:
+                            break;
+                        case State.SecondNumber:
+                            if (secondNumber != "") numInMemory += Double.Parse(secondNumber);
+                            break;
+                        case State.Result:
+                            numInMemory += result;
+                            break;
+                    }
+                    break;
+                case "M-":
+                    if (Memory == "") break;
+                    switch (_state)
+                    {
+                        case State.FirstNumber:
+                            if (firstNumber != "") numInMemory -= Double.Parse(firstNumber);
+                            break;
+                        case State.Operation:
+                            break;
+                        case State.SecondNumber:
+                            if (secondNumber != "") numInMemory -= Double.Parse(secondNumber);
+                            break;
+                        case State.Result:
+                            numInMemory -= result;
+                            break;
+                    }
+                    break;
+            }
         }
         private void processClearOperation(string clearButton)
         {
             switch (clearButton)
             {
+                case "<-":
+                    switch (_state)
+                    {
+                        case State.FirstNumber:
+                            if (firstNumber.Length > 0) firstNumber = firstNumber.Substring(0, firstNumber.Length - 1);
+                            break;
+                        case State.Operation:
+                            _state = State.FirstNumber;
+                            break;
+                        case State.SecondNumber:
+                            if (secondNumber.Length > 0) secondNumber = secondNumber.Substring(0, secondNumber.Length - 1);
+                            else _state = State.FirstNumber;
+                            break;
+                        case State.Result:
+                            clearDisplay();
+                            break;
+                    }
+                    break;
                 case "C":
-                    _state = State.FirstNumber;
-                    firstNumber = "";
+                    clearDisplay();
                     break;
                 case "CE":
                     switch (_state)
@@ -148,8 +231,7 @@ namespace OOP_cv9
                             secondNumber = "";
                             break;
                         case State.Result:
-                            firstNumber = "";
-                            _state = State.FirstNumber;
+                            clearDisplay();
                             break;
                         default:
                             break;
@@ -175,8 +257,8 @@ namespace OOP_cv9
                             negateString(ref secondNumber);
                             break;
                         case State.Result:
+                            clearDisplay();
                             firstNumber = (-result).ToString();
-                            _state = State.FirstNumber;
                             break;
                     }
                     break;
@@ -215,8 +297,8 @@ namespace OOP_cv9
                             secondNumber = "0,";
                             break;
                         case State.Result:
+                            clearDisplay();
                             firstNumber = "0,";
-                            _state = State.FirstNumber;
                             break;
                     }
                     break;
@@ -225,8 +307,6 @@ namespace OOP_cv9
         }
         private void calculateResult()
         {
-
-            if (_state == State.Result) return;
             if (firstNumber == "") firstNumber = "0";
             if (secondNumber == "") secondNumber = "0";
             error = "";
@@ -251,6 +331,24 @@ namespace OOP_cv9
             firstNumber = "";
             secondNumber = "";
             _state = State.Result;
+        }
+        private void clearDisplay()
+        {
+            _state = State.FirstNumber;
+            firstNumber = "";
+            secondNumber = "";
+        }
+        private void negateString(ref string input)
+        {
+            if (input.Length == 0 || input == "0") return;
+            if (input[0] == '-') input = input.Substring(1);
+            else input = "-" + input;
+        }
+        private string negateString(string input)
+        {
+            if (input.Length == 0 || input == "0") return "";
+            if (input[0] == '-') return input.Substring(1);
+            else return "-" + input;
         }
     }
 }
