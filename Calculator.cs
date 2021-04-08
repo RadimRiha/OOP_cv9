@@ -9,12 +9,11 @@ namespace OOP_cv9
     public class Calculator
     {
         public string Memory;
-
         private string firstNumber;
         private string secondNumber;
+        private string operand;
         private double result;
         private double numInMemory;
-        private string operand;
         string error;
         private enum State
         {
@@ -205,12 +204,17 @@ namespace OOP_cv9
                     {
                         case State.FirstNumber:
                             if (firstNumber.Length > 0) firstNumber = firstNumber.Substring(0, firstNumber.Length - 1);
+                            if (firstNumber == "-") firstNumber = "";
                             break;
                         case State.Operation:
                             _state = State.FirstNumber;
                             break;
                         case State.SecondNumber:
-                            if (secondNumber.Length > 0) secondNumber = secondNumber.Substring(0, secondNumber.Length - 1);
+                            if (secondNumber.Length > 0)
+                            {
+                                secondNumber = secondNumber.Substring(0, secondNumber.Length - 1);
+                                if (secondNumber == "-") secondNumber = "";
+                            }
                             else _state = State.FirstNumber;
                             break;
                         case State.Result:
@@ -288,13 +292,16 @@ namespace OOP_cv9
                     switch (_state)
                     {
                         case State.FirstNumber:
-                            firstNumber += ",";
+                            if (firstNumber == "") firstNumber = "0";
+                             firstNumber += ",";
                             break;
                         case State.SecondNumber:
+                            if (secondNumber == "") secondNumber = "0";
                             secondNumber += ",";
                             break;
                         case State.Operation:
                             secondNumber = "0,";
+                            _state = State.SecondNumber;
                             break;
                         case State.Result:
                             clearDisplay();
@@ -303,7 +310,6 @@ namespace OOP_cv9
                     }
                     break;
             }
-
         }
         private void calculateResult()
         {
